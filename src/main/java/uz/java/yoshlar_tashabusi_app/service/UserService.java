@@ -1,5 +1,6 @@
 package uz.java.yoshlar_tashabusi_app.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -21,33 +22,20 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserService {
 
     private final ExcelParserService excelParserService;
     private final UserRepository userRepository;
-    private final AttachmetService attachmetService;
-    private final SportTypeService sportTypeService;
-    private final SportTypeCategoryService sportTypeCategoryService;
+    private final AttachmentService attachmentService;
     private final SportTypeRepository sportTypeRepository;
     private final AgeCategoryRepository ageCategoryRepository;
-    private final SportTypeCategoryRepository sportTypeCategoryRepository;
-
-    public UserService(ExcelParserService excelParserService, UserRepository userRepository, AttachmentRepository attachmentRepository, AttachmetService attachmetService, SportTypeService sportTypeService, SportTypeCategoryService sportTypeCategoryService, SportTypeRepository sportTypeRepository, AgeCategoryRepository ageCategoryRepository, SportTypeCategoryRepository sportTypeCategoryRepository) {
-        this.excelParserService = excelParserService;
-        this.userRepository = userRepository;
-        this.attachmetService = attachmetService;
-        this.sportTypeService = sportTypeService;
-        this.sportTypeCategoryService = sportTypeCategoryService;
-        this.sportTypeRepository = sportTypeRepository;
-        this.ageCategoryRepository = ageCategoryRepository;
-        this.sportTypeCategoryRepository = sportTypeCategoryRepository;
-    }
 
     /*
               Buyerda biz faqat Userning Passport Seriya Raqamini va BirthDate sini saqlashiligimiz kerak.
@@ -184,7 +172,7 @@ public class UserService {
                 user.setPinfl(result.optString("pinfl", ""));
 
                 if (result.isNull("photo")) {
-                    user.setAttachment(attachmetService.saveAttachment(result.getJSONObject("photo")));
+                    user.setAttachment(attachmentService.saveAttachment(result.getJSONObject("photo")));
                 }
                 return user;
             } catch (Exception e) {
@@ -258,7 +246,7 @@ public class UserService {
         body.put("lastname", user.getLastName());
         body.put("shortname", user.getShortName());
         body.put("fullname", user.getFullName());
-        body.put("dateofbirth", sportTypeService.formatDate(user.getDateOfBirth()));
+        body.put("dateofbirth", formatDate(user.getDateOfBirth()));
         body.put("pinfl", user.getPinfl());
         body.put("genderid", user.getGenderId());
         body.put("gendername", user.getGenderName());
@@ -328,4 +316,8 @@ public class UserService {
         int age = Period.between(dateOfBirth, LocalDate.now()).getYears();
         return ageCategoryRepository.findByAge(age).orElse(null);
     }
+    public String formatDate(LocalDate date) {
+        return date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+    }
+
 }

@@ -27,7 +27,7 @@ public class ExcelParserService {
         try (InputStream is = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(is)) {
 
-            Sheet sheet = workbook.getSheetAt(0);  // Birinchi varaq
+            Sheet sheet = workbook.getSheetAt(0);
             int totalRows = sheet.getPhysicalNumberOfRows();
 
             log.info("Excel fayl o'qilmoqda: {} qator topildi", totalRows);
@@ -45,16 +45,11 @@ public class ExcelParserService {
                             .documentSeriNumber(getCellString(row, 3))
                             .phoneNumber("+99899" + ThreadLocalRandom.current().nextInt(1_000_000, 10_000_000))
                             .rowNumber(i + 1)
-//                            .firstName(getCellString(row, 0))
-//                            .lastName(getCellString(row, 1))
-//                            .email(getCellString(row, 2))
-//                            .role(getCellString(row, 5))
                             .build();
 
                     users.add(dto);
                 } catch (Exception e) {
                     log.warn("{}-qatorda xato: {}", i + 1, e.getMessage());
-                    // Xatoli qatorni o'tkazib yuboramiz, service qayta tekshiradi
                     UserDto errorDto = new UserDto();
                     errorDto.setRowNumber(i + 1);
                     users.add(errorDto);
@@ -66,8 +61,6 @@ public class ExcelParserService {
         return users;
     }
 
-    // ─── Yordamchi metodlar ───────────────────────────────────────────────────
-
     private String getCellString(Row row, int colIndex) {
         Cell cell = row.getCell(colIndex, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
         if (cell == null) return null;
@@ -75,7 +68,6 @@ public class ExcelParserService {
         return switch (cell.getCellType()) {
             case STRING -> cell.getStringCellValue().trim();
             case NUMERIC -> {
-                // Raqam bor bo'lsa string sifatida qaytaramiz (telefon uchun)
                 if (DateUtil.isCellDateFormatted(cell)) yield null;
                 long num = (long) cell.getNumericCellValue();
                 yield String.valueOf(num);
@@ -100,7 +92,6 @@ public class ExcelParserService {
         if (cell.getCellType() == CellType.STRING) {
             String val = cell.getStringCellValue().trim();
             if (val.isEmpty()) return null;
-            // dd.MM.yyyy formatini parse qilamiz
             String[] parts = val.split("[./\\-]");
             if (parts.length == 3) {
                 int day = Integer.parseInt(parts[0]);

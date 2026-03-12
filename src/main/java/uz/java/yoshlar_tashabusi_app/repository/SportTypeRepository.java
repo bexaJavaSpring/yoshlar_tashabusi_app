@@ -9,9 +9,6 @@ import uz.java.yoshlar_tashabusi_app.entity.SportyType;
 import java.util.List;
 
 public interface SportTypeRepository extends JpaRepository<SportyType, Integer> {
-
-    List<SportyType> findBySportTypeCategory(SportTypeCategory category);
-
     @Query("select t from SportyType t join t.ageCategories a where a.id=?1")
     List<SportyType> findAllByAgeCategory(Integer ageCategoryId);
 }

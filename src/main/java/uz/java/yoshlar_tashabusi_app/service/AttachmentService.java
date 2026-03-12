@@ -8,7 +8,7 @@ import uz.java.yoshlar_tashabusi_app.repository.AttachmentRepository;
 
 @Service
 @Slf4j
-public class AttachmetService {
+public class AttachmentService {
     AttachmentRepository attachmentRepository;
 
 

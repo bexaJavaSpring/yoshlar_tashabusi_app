@@ -15,7 +15,6 @@ import java.util.Set;
 @NoArgsConstructor
 public class SportyType {
     @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     private String name;
