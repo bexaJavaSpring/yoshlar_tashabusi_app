@@ -1,25 +1,29 @@
 package uz.java.yoshlar_tashabusi_app.service;
 
-import jakarta.transaction.Transactional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import uz.java.yoshlar_tashabusi_app.dto.ImportResultDto;
 import uz.java.yoshlar_tashabusi_app.dto.UserDto;
-import uz.java.yoshlar_tashabusi_app.entity.User;
+import uz.java.yoshlar_tashabusi_app.entity.*;
 import uz.java.yoshlar_tashabusi_app.repository.AttachmentRepository;
+import uz.java.yoshlar_tashabusi_app.repository.SportTypeRepository;
 import uz.java.yoshlar_tashabusi_app.repository.UserRepository;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -30,13 +34,15 @@ public class UserService {
     private final AttachmetService attachmetService;
     private final SportTypeService sportTypeService;
     private final SportTypeCategoryService sportTypeCategoryService;
+    private final SportTypeRepository sportTypeRepository;
 
-    public UserService(ExcelParserService excelParserService, UserRepository userRepository, AttachmentRepository attachmentRepository, AttachmetService attachmetService, SportTypeService sportTypeService, SportTypeCategoryService sportTypeCategoryService) {
+    public UserService(ExcelParserService excelParserService, UserRepository userRepository, AttachmentRepository attachmentRepository, AttachmetService attachmetService, SportTypeService sportTypeService, SportTypeCategoryService sportTypeCategoryService, SportTypeRepository sportTypeRepository) {
         this.excelParserService = excelParserService;
         this.userRepository = userRepository;
         this.attachmetService = attachmetService;
         this.sportTypeService = sportTypeService;
         this.sportTypeCategoryService = sportTypeCategoryService;
+        this.sportTypeRepository = sportTypeRepository;
     }
 
     /*
@@ -91,8 +97,6 @@ public class UserService {
         return ImportResultDto.of(parsedUsers.size(), savedCount, errors);
     }
 
-    // ─── Validatsiya ──────────────────────────────────────────────────────────
-
     private List<String> validate(UserDto dto) {
         List<String> errors = new ArrayList<>();
 
@@ -112,8 +116,6 @@ public class UserService {
         return email != null && email.matches("^[\\w.+\\-]+@[\\w\\-]+\\.[a-zA-Z]{2,}$");
     }
 
-    // ─── Mapper ───────────────────────────────────────────────────────────────
-
     private User toEntity(UserDto dto) {
         return User.builder()
 //                .firstName(dto.getFirstName())
@@ -124,8 +126,6 @@ public class UserService {
                 .dateOfBirth(dto.getBirthDate())
                 .build();
     }
-
-    // ─── Fayl tekshirish ──────────────────────────────────────────────────────
 
     private void validateFileFormat(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -253,4 +253,118 @@ public class UserService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public Boolean insertData(Integer mfyId) {
+        List<User> list = userRepository.findByMfyId(mfyId);
+        int success = 0, failed = 0;
+        for (User user : list) {
+            try {
+                boolean result = sendUserToApi(user);
+                if (result) success++;
+                else failed++;
+            } catch (Exception e) {
+                System.out.println("User " + user.getId() + " xatolik: " + e.getMessage());
+                failed++;
+            }
+        }
+        return success > 0;
+    }
+
+    private boolean sendUserToApi(User user) throws Exception {
+        Address address = user.getAddress();
+        SportTypeCategory category = user.getSportTypeCategories()
+                .stream().findFirst().orElse(null);
+
+        List<Integer> sportTypeIds = sportTypeRepository
+                .findBySportTypeCategory(category)
+                .stream()
+                .map(SportyType::getId)
+                .collect(Collectors.toList());
+
+        AgeCategory ageCategory = user.getAgeCategories()
+                .stream().findFirst().orElse(null);
+
+        JSONObject body = new JSONObject();
+        body.put("id", user.getId() != null ? user.getId() : 0);
+        body.put("healthtypeid", user.getHealthTypeId());
+        body.put("detail", user.getDetail() != null ? user.getDetail() : "");
+        body.put("oblastid", address != null ? address.getOblastId() : JSONObject.NULL);
+        body.put("oblastname", address != null ? address.getOblastName() : "");
+        body.put("regionid", address != null ? address.getRegionId() : JSONObject.NULL);
+        body.put("regionname", address != null ? address.getRegionName() : "");
+        body.put("mfyid", address != null ? address.getMfyId() : JSONObject.NULL);
+        body.put("regionsectorid", JSONObject.NULL);
+        body.put("regionsectorname", "");
+        body.put("youthleaderpersonid", user.getYouthLeaderPersonId() != null ? user.getYouthLeaderPersonId() : JSONObject.NULL);
+        body.put("familyname", user.getFamilyName());
+        body.put("firstname", user.getFirstName());
+        body.put("lastname", user.getLastName());
+        body.put("shortname", user.getShortName());
+        body.put("fullname", user.getFullName());
+        body.put("dateofbirth", sportTypeService.formatDate(user.getDateOfBirth()));
+        body.put("pinfl", user.getPinfl());
+        body.put("genderid", user.getGenderId());
+        body.put("gendername", user.getGenderName());
+        body.put("identitydocumentid", user.getIdentityDocumentId());
+        body.put("identitydocumentname", user.getIdentityDocumentName() != null ? user.getIdentityDocumentName() : JSONObject.NULL);
+        body.put("documentseries", user.getDocumentSeriesNumber().substring(0, 2));
+        body.put("documentnumber", user.getDocumentSeriesNumber().substring(2));
+        body.put("sporttypeids", new JSONArray(sportTypeIds));
+        body.put("canSave", true);
+        body.put("agecategoryid", ageCategory != null ? ageCategory.getId() : JSONObject.NULL);
+        body.put("sporttypecategoryid", category != null ? category.getId() : JSONObject.NULL);
+        body.put("sporttypecategoryname", category != null ? category.getName() : "");
+        body.put("isimport", user.isImport());
+        body.put("initiativtypeid", user.getInitiativTypeId());
+        body.put("initiativtypename", user.getInitiativTypeName() != null ? user.getInitiativTypeName() : "");
+        body.put("userId", user.getId() != null ? user.getId() : 0);
+        body.put("phonenumber", user.getPhoneNumber());
+
+        Attachment att = user.getAttachment();
+        if (att != null) {
+            JSONObject photo = new JSONObject();
+            photo.put("id", att.getPhotoId() != null ? att.getPhotoId() : 0);
+            photo.put("ownerid", att.getOwnerId() != null ? att.getOwnerId() : 0);
+            photo.put("attachmentfileid", att.getAttachmentFileId());
+            photo.put("attachmentfilename", att.getAttachmentFileName());
+            photo.put("attachmentfiletype", att.getAttachmentFileType());
+            photo.put("Status", att.getStatus() != null ? att.getStatus() : 1);
+            body.put("photo", photo);
+        } else {
+            body.put("photo", JSONObject.NULL);
+        }
+
+        URL url = new URL("https://api.5tashabbus.uz/Account/InsertRegistrationOfAthlete");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+        conn.setRequestProperty("Accept", "application/json, text/plain, */*");
+        conn.setRequestProperty("Origin", "https://5tashabbus.uz");
+        conn.setRequestProperty("Referer", "https://5tashabbus.uz/");
+
+        byte[] bodyBytes = body.toString().getBytes(StandardCharsets.UTF_8);
+        conn.setFixedLengthStreamingMode(bodyBytes.length);
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(bodyBytes);
+        }
+
+        int status = conn.getResponseCode();
+        System.out.println("User " + user.getId() + " → status: " + status);
+
+        try (InputStream stream = (status >= 200 && status < 300)
+                ? conn.getInputStream() : conn.getErrorStream()) {
+            if (stream == null) return false;
+            BufferedReader br = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) sb.append(line);
+
+            System.out.println("Response: " + sb);
+
+            JSONObject response = new JSONObject(sb.toString());
+            return !response.isNull("result") && response.optBoolean("success", false);
+        }
+    }
 }
