@@ -27,54 +27,54 @@ public class SportTypeCategoryService {
     private final UserRepository userRepository;
 
     @SneakyThrows
-    public User syncSportTypeCategories(User user) {
-        Set<SportTypeCategory> sportTypeCategories = new HashSet<>();
-        String ageCategoryIdList = getAgeCategoryIdList(user);
+//    public User syncSportTypeCategories(User user) {
+//        Set<SportTypeCategory> sportTypeCategories = new HashSet<>();
+////        String ageCategoryIdList = getAgeCategoryIdList(user);
+//
+//        String urlString = "https://api.5tashabbus.uz/SportTypeCategory/GetAll?" +
+//                "lang=uz_latn" +
+//                "&agecategoryid=null" +
+//                "&isSeasonDoc=true" +
+//                ageCategoryIdList +
+//                "&initiativtypeid=" + user.getInitiativTypeId() +
+//                "&genderId=" + user.getGenderId() +
+//                "&isonlineregistration=true";
+//
+//        String response = fetchGet(urlString);
+//        JSONArray results = new JSONArray(response);
+//
+//        for (int i = 0; i < results.length(); i++) {
+//            JSONObject item = results.getJSONObject(i);
+//            int id = item.getInt("id");
+//            String name = item.optString("name", "");
+//
+//            SportTypeCategory category = sportTypeCategoryRepository.findById(id)
+//                    .orElseGet(() -> {
+//                        SportTypeCategory newCategory = new SportTypeCategory();
+//                        newCategory.setId(id);
+//                        newCategory.setName(name);
+//                        return sportTypeCategoryRepository.save(newCategory);
+//                    });
+//
+//            sportTypeCategories.add(category);
+//        }
+//
+//        user.setSportTypeCategories(sportTypeCategories);
+//        userRepository.save(user);
+//        return user;
+//    }
 
-        String urlString = "https://api.5tashabbus.uz/SportTypeCategory/GetAll?" +
-                "lang=uz_latn" +
-                "&agecategoryid=null" +
-                "&isSeasonDoc=true" +
-                ageCategoryIdList +
-                "&initiativtypeid=" + user.getInitiativTypeId() +
-                "&genderId=" + user.getGenderId() +
-                "&isonlineregistration=true";
-
-        String response = fetchGet(urlString);
-        JSONArray results = new JSONArray(response);
-
-        for (int i = 0; i < results.length(); i++) {
-            JSONObject item = results.getJSONObject(i);
-            int id = item.getInt("id");
-            String name = item.optString("name", "");
-
-            SportTypeCategory category = sportTypeCategoryRepository.findById(id)
-                    .orElseGet(() -> {
-                        SportTypeCategory newCategory = new SportTypeCategory();
-                        newCategory.setId(id);
-                        newCategory.setName(name);
-                        return sportTypeCategoryRepository.save(newCategory);
-                    });
-
-            sportTypeCategories.add(category);
-        }
-
-        user.setSportTypeCategories(sportTypeCategories);
-        userRepository.save(user);
-        return user;
-    }
-
-    private String getAgeCategoryIdList(User user) {
-        if (user.getAgeCategories() == null || user.getAgeCategories().isEmpty()) {
-            return "";
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (AgeCategory ageCategory : user.getAgeCategories()) {
-            sb.append("&agecategoryIdList=").append(ageCategory.getId());
-        }
-        return sb.toString();
-    }
+//    private String getAgeCategoryIdList(User user) {
+//        if (user.getAgeCategories() == null || user.getAgeCategories().isEmpty()) {
+//            return "";
+//        }
+//
+//        StringBuilder sb = new StringBuilder();
+//        for (AgeCategory ageCategory : user.getAgeCategories()) {
+//            sb.append("&agecategoryIdList=").append(ageCategory.getId());
+//        }
+//        return sb.toString();
+//    }
 
     public String fetchGet(String urlString) throws Exception {
         URL url = new URL(urlString);

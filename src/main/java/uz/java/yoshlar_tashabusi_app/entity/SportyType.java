@@ -5,6 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "sport_type")
 @Data
@@ -12,7 +15,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SportyType {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     private String name;
@@ -24,4 +27,16 @@ public class SportyType {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sport_type_category_id")
     private SportTypeCategory sportTypeCategory;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "sport_type_age_category", joinColumns = {@JoinColumn(name = "sport_type_id", referencedColumnName = "id")}
+            , inverseJoinColumns = {@JoinColumn(name = "age_category_id", referencedColumnName = "id")})
+    private Set<AgeCategory> ageCategories = new HashSet<>();
+
+    public SportyType(int id, String name, Integer commonType, Integer participantCount) {
+        this.id = id;
+        this.name = name;
+        this.commonType = commonType;
+        this.participantCount = participantCount;
+    }
 }

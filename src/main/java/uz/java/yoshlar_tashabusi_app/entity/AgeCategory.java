@@ -18,6 +18,9 @@ public class AgeCategory {
 //    private Integer categoryId;
     private String name;
 
+    private Integer minAge;
+    private Integer maxAge;
+
 //    public AgeCategory(int categoryId, String name) {
 //        this.categoryId = categoryId;
 //        this.name = name;

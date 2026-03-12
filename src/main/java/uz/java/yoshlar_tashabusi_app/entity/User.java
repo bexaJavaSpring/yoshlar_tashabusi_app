@@ -75,10 +75,6 @@ public class User {
             , inverseJoinColumns = {@JoinColumn(name = "sport_type_category_id", referencedColumnName = "id")})
     private Set<SportTypeCategory> sportTypeCategories = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(name = "user_age_category", joinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")}
-            , inverseJoinColumns = {@JoinColumn(name = "age_category_id", referencedColumnName = "id")})
-    private Set<AgeCategory> ageCategories = new HashSet<>();
 
     /*
     Userni ma'lumotlari Agentlik API sidan kelgan ma'lumotlari bilan to'ldirilganligi

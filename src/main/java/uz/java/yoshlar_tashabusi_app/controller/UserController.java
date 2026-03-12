@@ -25,8 +25,8 @@ public class UserController {
         return ResponseEntity.of(Optional.ofNullable(service.changeUserFields()));
     }
 
-    @GetMapping("/{mfyId}")
-    public ResponseEntity<?> insertData(@PathVariable Integer mfyId){
-        return ResponseEntity.ok(service.insertData(mfyId));
-    }
+//    @GetMapping("/{mfyId}")
+//    public ResponseEntity<?> insertData(@PathVariable Integer mfyId){
+//        return ResponseEntity.ok(service.insertData(mfyId));
+//    }
 }
