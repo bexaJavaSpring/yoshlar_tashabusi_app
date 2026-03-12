@@ -22,6 +22,6 @@ public class UserController {
 
     @GetMapping("/change-user-filds")
     public ResponseEntity<?> chaneUserFields() {
-        return ResponseEntity.of(Optional.ofNullable(service.changeUserFilds()));
+        return ResponseEntity.of(Optional.ofNullable(service.changeUserFields()));
     }
 }

@@ -1,12 +1,9 @@
 package uz.java.yoshlar_tashabusi_app.service;
 
 import jakarta.transaction.Transactional;
-import jakarta.validation.constraints.Null;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.xmlbeans.impl.xb.xsdschema.Attribute;
 import org.json.JSONObject;
-import org.springframework.http.ProblemDetail;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import uz.java.yoshlar_tashabusi_app.dto.ImportResultDto;
@@ -31,11 +28,15 @@ public class UserService {
     private final ExcelParserService excelParserService;
     private final UserRepository userRepository;
     private final AttachmetService attachmetService;
+    private final SportTypeService sportTypeService;
+    private final SportTypeCategoryService sportTypeCategoryService;
 
-    public UserService(ExcelParserService excelParserService, UserRepository userRepository, AttachmentRepository attachmentRepository, AttachmetService attachmetService) {
+    public UserService(ExcelParserService excelParserService, UserRepository userRepository, AttachmentRepository attachmentRepository, AttachmetService attachmetService, SportTypeService sportTypeService, SportTypeCategoryService sportTypeCategoryService) {
         this.excelParserService = excelParserService;
         this.userRepository = userRepository;
         this.attachmetService = attachmetService;
+        this.sportTypeService = sportTypeService;
+        this.sportTypeCategoryService = sportTypeCategoryService;
     }
 
     /*
@@ -142,8 +143,8 @@ public class UserService {
      * Agar barcha kerakli ma'lumotlari to'ldirilgan bo'lmasa
      * Tashabbus API sidan to'ldirishlikni boshlaydi
      * */
-
-    public List<UserDto> changeUserFilds() {
+    @Transactional
+    public List<UserDto> changeUserFields() {
         List<UserDto> userDtos = new ArrayList<>();
         for (User user : userRepository.findAll()) {
             /*
@@ -159,8 +160,8 @@ public class UserService {
              *   Add Sport TpyeCategory method
              *   Add Sport Tpye method
              * */
-
-
+            sportTypeCategoryService.syncSportTypeCategories(user);
+            sportTypeService.syncSportTypes();
 //
             if (user.getIsFullData())
                 continue;
