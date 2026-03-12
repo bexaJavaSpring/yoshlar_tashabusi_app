@@ -35,8 +35,13 @@ public class SportTypeService {
                     "&healthtypeid=" + user.getHealthTypeId();
 
             String response = sportTypeCategoryService.fetchGet(urlString);
-            JSONArray results = new JSONArray(response);
 
+            if (response == null || response.isBlank() || !response.trim().startsWith("[")) {
+                System.out.println("Category " + category.getName() + " — response xato: " + response);
+                continue;
+            }
+
+            JSONArray results = new JSONArray(response);
             for (int i = 0; i < results.length(); i++) {
                 JSONObject item = results.getJSONObject(i);
                 int id = item.getInt("id");
@@ -45,13 +50,13 @@ public class SportTypeService {
                     SportyType sportType = new SportyType();
                     sportType.setId(id);
                     sportType.setName(item.optString("name", ""));
-                    sportType.setCommonType(item.optInt("commonType", 0));
-                    sportType.setParticipantCount(item.optInt("participantCount", 0));
+                    sportType.setCommonType(item.isNull("commandtype") ? null : item.optInt("commandtype"));
+                    sportType.setParticipantCount(item.optInt("participantcount", 0));
                     sportType.setSportTypeCategory(category);
                     sportTypeRepository.save(sportType);
                 }
             }
-            System.out.println("Category " + category.getName() + " uchun SportType lar saqlandi");
+            System.out.println("Category " + category.getName() + " uchun " + results.length() + " ta SportType saqlandi");
         }
     }
 
