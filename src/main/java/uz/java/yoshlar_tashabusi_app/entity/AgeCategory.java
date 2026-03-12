@@ -12,8 +12,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AgeCategory {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+//    private Integer categoryId;
     private String name;
+
+//    public AgeCategory(int categoryId, String name) {
+//        this.categoryId = categoryId;
+//        this.name = name;
+//    }
 }

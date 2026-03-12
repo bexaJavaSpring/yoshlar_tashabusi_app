@@ -23,7 +23,7 @@ public class AgeCategoryLoader implements CommandLineRunner {
 
 
         repository.saveAll(ageCategoryList());
-//        addressRepository.saveAll(addressList());
+        addressRepository.saveAll(addressList());
 
         System.out.println(">>> Yosh toifalari bazaga yuklandi!");
     }
