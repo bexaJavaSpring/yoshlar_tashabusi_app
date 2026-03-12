@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import uz.java.yoshlar_tashabusi_app.dto.ImportResultDto;
 import uz.java.yoshlar_tashabusi_app.dto.UserDto;
 import uz.java.yoshlar_tashabusi_app.entity.*;
+import uz.java.yoshlar_tashabusi_app.repository.AgeCategoryRepository;
 import uz.java.yoshlar_tashabusi_app.repository.AttachmentRepository;
 import uz.java.yoshlar_tashabusi_app.repository.SportTypeRepository;
 import uz.java.yoshlar_tashabusi_app.repository.UserRepository;
@@ -21,6 +22,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,14 +38,16 @@ public class UserService {
     private final SportTypeService sportTypeService;
     private final SportTypeCategoryService sportTypeCategoryService;
     private final SportTypeRepository sportTypeRepository;
+    private final AgeCategoryRepository ageCategoryRepository;
 
-    public UserService(ExcelParserService excelParserService, UserRepository userRepository, AttachmentRepository attachmentRepository, AttachmetService attachmetService, SportTypeService sportTypeService, SportTypeCategoryService sportTypeCategoryService, SportTypeRepository sportTypeRepository) {
+    public UserService(ExcelParserService excelParserService, UserRepository userRepository, AttachmentRepository attachmentRepository, AttachmetService attachmetService, SportTypeService sportTypeService, SportTypeCategoryService sportTypeCategoryService, SportTypeRepository sportTypeRepository, AgeCategoryRepository ageCategoryRepository) {
         this.excelParserService = excelParserService;
         this.userRepository = userRepository;
         this.attachmetService = attachmetService;
         this.sportTypeService = sportTypeService;
         this.sportTypeCategoryService = sportTypeCategoryService;
         this.sportTypeRepository = sportTypeRepository;
+        this.ageCategoryRepository = ageCategoryRepository;
     }
 
     /*
@@ -184,11 +189,11 @@ public class UserService {
                 }
                 return user;
             } catch (Exception e) {
-                System.out.println(e.toString());
+                System.out.println(e);
                 return null;
             }
         } catch (Exception e) {
-            System.out.println(e.toString());
+            System.out.println(e);
             return null;
         }
     }
@@ -221,9 +226,7 @@ public class UserService {
                 .map(SportyType::getId)
                 .collect(Collectors.toList());
 
-//        AgeCategory ageCategory = user.getAgeCategories()
-//                .stream().findFirst().orElse(null);
-
+        AgeCategory ageCategory = findAgeCategoryByBirthDate(user.getDateOfBirth());
         JSONObject body = new JSONObject();
         body.put("id", user.getId() != null ? user.getId() : 0);
         body.put("healthtypeid", user.getHealthTypeId());
@@ -251,7 +254,7 @@ public class UserService {
         body.put("documentnumber", user.getDocumentSeriesNumber().substring(2));
         body.put("sporttypeids", new JSONArray(sportTypeIds));
         body.put("canSave", true);
-//        body.put("agecategoryid", ageCategory != null ? ageCategory.getId() : JSONObject.NULL);
+        body.put("agecategoryid", ageCategory != null ? ageCategory.getId() : JSONObject.NULL);
         body.put("sporttypecategoryid", category != null ? category.getId() : JSONObject.NULL);
         body.put("sporttypecategoryname", category != null ? category.getName() : "");
         body.put("isimport", user.isImport());
@@ -306,5 +309,10 @@ public class UserService {
             JSONObject response = new JSONObject(sb.toString());
             return !response.isNull("result") && response.optBoolean("success", false);
         }
+    }
+    private AgeCategory findAgeCategoryByBirthDate(LocalDate dateOfBirth) {
+        if (dateOfBirth == null) return null;
+        int age = Period.between(dateOfBirth, LocalDate.now()).getYears();
+        return ageCategoryRepository.findByAge(age).orElse(null);
     }
 }
