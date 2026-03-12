@@ -198,32 +198,51 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Integer insertData(Integer mfyId) {
+    public List<Integer> insertData(Integer mfyId) {
         List<User> list = userRepository.findByMfyId(mfyId);
-        int success = 0, failed = 0;
+        List<Integer> failedUserIds = new ArrayList<>();
         for (User user : list) {
             try {
-                Integer result = sendUserToApi(user);
-                if (result) return user.getId();
-                else failed++;
+                boolean result = sendUserToApi(user);
+                if (!result) failedUserIds.add(user.getId());
             } catch (Exception e) {
                 System.out.println("User " + user.getId() + " xatolik: " + e.getMessage());
-                failed++;
+                failedUserIds.add(user.getId());
             }
         }
-        return success > 0;
+        return failedUserIds;
     }
 
-    private Integer sendUserToApi(User user) throws Exception {
+    private boolean sendUserToApi(User user) throws Exception {
         AgeCategory ageCategory = findAgeCategoryByBirthDate(user.getDateOfBirth());
         Address address = user.getAddress();
-        List<SportyType> list = sportTypeRepository.findAllByAgeCategory(ageCategory.getId());
-        for (SportyType sportType : list) {
-
+        List<SportyType> sportTypeList = sportTypeRepository.findAllByAgeCategory(ageCategory.getId());
+        Integer successSportTypeId = null;
+        for (SportyType sportType : sportTypeList) {
+            Integer result = sendRequest(user, address, ageCategory, sportType);
+            if (result != null) {
+                successSportTypeId = result;
+                System.out.println("User " + user.getId() + " uchun sportTypeId: " + successSportTypeId + " muvaffaqiyatli!");
+                break;
+            } else {
+                System.out.println("User " + user.getId() + " — sportType " + sportType.getId() + " mos kelmadi, keyingisi...");
+            }
         }
-        List<Integer> sportTypeIds = list.stream().map(SportyType::getId).collect(Collectors.toList());
+
+        if (successSportTypeId == null) {
+            System.out.println("User " + user.getId() + " uchun hech qaysi sportType mos kelmadi!");
+            return false;
+        }
+
+        user.getSportTypeIdList().add(successSportTypeId);
+        userRepository.save(user);
+        return true;
+    }
+
+    private Integer sendRequest(User user, Address address, AgeCategory ageCategory, SportyType sportType) throws Exception {
+        SportTypeCategory category = sportType.getSportTypeCategory();
         JSONObject body = new JSONObject();
-        body.put("id", user.getId() != null ? user.getId() : 0);
+        body.put("id", 0);
         body.put("healthtypeid", user.getHealthTypeId());
         body.put("detail", user.getDetail() != null ? user.getDetail() : "");
         body.put("oblastid", address != null ? address.getOblastId() : JSONObject.NULL);
@@ -247,7 +266,7 @@ public class UserService {
         body.put("identitydocumentname", user.getIdentityDocumentName() != null ? user.getIdentityDocumentName() : JSONObject.NULL);
         body.put("documentseries", user.getDocumentSeriesNumber().substring(0, 2));
         body.put("documentnumber", user.getDocumentSeriesNumber().substring(2));
-        body.put("sporttypeids", new JSONArray(sportTypeIds));
+        body.put("sporttypeids", new JSONArray(List.of(sportType.getId())));
         body.put("canSave", true);
         body.put("agecategoryid", ageCategory != null ? ageCategory.getId() : JSONObject.NULL);
         body.put("sporttypecategoryid", category != null ? category.getId() : JSONObject.NULL);
@@ -255,7 +274,7 @@ public class UserService {
         body.put("isimport", user.isImport());
         body.put("initiativtypeid", user.getInitiativTypeId());
         body.put("initiativtypename", user.getInitiativTypeName() != null ? user.getInitiativTypeName() : "");
-        body.put("userId", user.getId() != null ? user.getId() : 0);
+        body.put("userId", 0);
         body.put("phonenumber", user.getPhoneNumber());
 
         Attachment att = user.getAttachment();
@@ -289,8 +308,7 @@ public class UserService {
         }
 
         int status = conn.getResponseCode();
-        System.out.println("User " + user.getId() + " → status: " + status);
-
+        System.out.println("SportType " + sportType.getId() + " → HTTP status: " + status);
         try (InputStream stream = (status >= 200 && status < 300)
                 ? conn.getInputStream() : conn.getErrorStream()) {
             if (stream == null) return null;
@@ -298,11 +316,10 @@ public class UserService {
             StringBuilder sb = new StringBuilder();
             String line;
             while ((line = br.readLine()) != null) sb.append(line);
-
-            System.out.println("Response: " + sb);
-
+            System.out.println("SportType " + sportType.getId() + " response: " + sb);
             JSONObject response = new JSONObject(sb.toString());
-            return !response.isNull("result") && response.optBoolean("success", false);
+            boolean success = response.optBoolean("success", false);
+            return success ? sportType.getId() : null;
         }
     }
 

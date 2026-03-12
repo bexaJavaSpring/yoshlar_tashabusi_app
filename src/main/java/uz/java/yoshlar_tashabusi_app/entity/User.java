@@ -92,5 +92,8 @@ public class User {
     @JoinColumn(name = "attachment_id", referencedColumnName = "id")
     private Attachment attachment;
 
-    private List<Integer> sportTypeIds = new ArrayList<>();
+    @ElementCollection
+    @CollectionTable(name = "user_sport_type_ids", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "sport_type_id")
+    private List<Integer> sportTypeIdList = new ArrayList<>();
 }
