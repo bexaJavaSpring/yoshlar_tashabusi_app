@@ -138,14 +138,30 @@ public class UserService {
     }
 
     /*
-    * Bizning local bazamizda bor userlarni tekshirib chiqadi.
-    * Agar barcha kerakli ma'lumotlari to'ldirilgan bo'lmasa
-    * Tashabbus API sidan to'ldirishlikni boshlaydi
-    * */
+     * Bizning local bazamizda bor userlarni tekshirib chiqadi.
+     * Agar barcha kerakli ma'lumotlari to'ldirilgan bo'lmasa
+     * Tashabbus API sidan to'ldirishlikni boshlaydi
+     * */
 
     public List<UserDto> changeUserFilds() {
         List<UserDto> userDtos = new ArrayList<>();
         for (User user : userRepository.findAll()) {
+            /*
+             *               MUHAMMADOQDIR
+             * Add age categor method
+             * Add Region
+             *
+             * */
+
+
+            /*
+             *       BEXRUZ
+             *   Add Sport TpyeCategory method
+             *   Add Sport Tpye method
+             * */
+
+
+//
             if (user.getIsFullData())
                 continue;
             if (!changeData(user))
@@ -164,8 +180,8 @@ public class UserService {
     }
 
     /*
-    * Tashabbus bazasidan userning passpot seriyraqam va birthdate orqali qidirib topadi
-    * */
+     * Tashabbus bazasidan userning passpot seriyraqam va birthdate orqali qidirib topadi
+     * */
 
     public User findUser(User user) {
         try {
