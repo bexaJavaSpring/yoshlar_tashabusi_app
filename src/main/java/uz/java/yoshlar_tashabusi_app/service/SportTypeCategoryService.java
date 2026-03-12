@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
+import uz.java.yoshlar_tashabusi_app.entity.AgeCategory;
 import uz.java.yoshlar_tashabusi_app.entity.SportTypeCategory;
 import uz.java.yoshlar_tashabusi_app.entity.User;
 import uz.java.yoshlar_tashabusi_app.repository.SportTypeCategoryRepository;
@@ -28,9 +29,18 @@ public class SportTypeCategoryService {
     @SneakyThrows
     public void syncSportTypeCategories(User user) {
         Set<SportTypeCategory> sportTypeCategories = new HashSet<>();
-        String urlString = "https://api.5tashabbus.uz/SportTypeCategory/GetAll?lang=uz_latn";
-        String response = fetchGet(urlString);
+        String ageCategoryIdList = getAgeCategoryIdList(user);
 
+        String urlString = "https://api.5tashabbus.uz/SportTypeCategory/GetAll?" +
+                "lang=uz_latn" +
+                "&agecategoryid=null" +
+                "&isSeasonDoc=true" +
+                ageCategoryIdList +
+                "&initiativtypeid=" + user.getInitiativTypeId() +
+                "&genderId=" + user.getGenderId() +
+                "&isonlineregistration=true";
+
+        String response = fetchGet(urlString);
         JSONObject object = new JSONObject(response);
         JSONArray results = object.getJSONArray("result");
 
@@ -39,7 +49,6 @@ public class SportTypeCategoryService {
             int id = item.getInt("id");
             String name = item.optString("name", "");
 
-            // Bazada bormi yo'qmi — har doim set ga qo'shish kerak
             SportTypeCategory category = sportTypeCategoryRepository.findById(id)
                     .orElseGet(() -> {
                         SportTypeCategory newCategory = new SportTypeCategory();
@@ -48,12 +57,24 @@ public class SportTypeCategoryService {
                         return sportTypeCategoryRepository.save(newCategory);
                     });
 
-            sportTypeCategories.add(category); // har doim qo'shiladi
+            sportTypeCategories.add(category);
         }
 
         user.setSportTypeCategories(sportTypeCategories);
         userRepository.save(user);
-        System.out.println("SportTypeCategory lar saqlandi: " + results.length());
+        System.out.println("User " + user.getId() + " ga " + sportTypeCategories.size() + " ta category biriktirildi");
+    }
+
+    private String getAgeCategoryIdList(User user) {
+        if (user.getAgeCategories() == null || user.getAgeCategories().isEmpty()) {
+            return "";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (AgeCategory ageCategory : user.getAgeCategories()) {
+            sb.append("&agecategoryIdList=").append(ageCategory.getId());
+        }
+        return sb.toString();
     }
 
     public String fetchGet(String urlString) throws Exception {

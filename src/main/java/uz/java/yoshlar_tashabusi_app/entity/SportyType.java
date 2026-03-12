@@ -22,10 +22,6 @@ public class SportyType {
     private Integer participantCount;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "age_category_id")
-    private AgeCategory agecategory;
-
-    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sport_type_category_id")
     private SportTypeCategory sportTypeCategory;
 }
