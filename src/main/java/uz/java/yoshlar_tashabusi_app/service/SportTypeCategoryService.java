@@ -41,8 +41,7 @@ public class SportTypeCategoryService {
                 "&isonlineregistration=true";
 
         String response = fetchGet(urlString);
-        JSONObject object = new JSONObject(response);
-        JSONArray results = object.getJSONArray("result");
+        JSONArray results = new JSONArray(response);
 
         for (int i = 0; i < results.length(); i++) {
             JSONObject item = results.getJSONObject(i);
