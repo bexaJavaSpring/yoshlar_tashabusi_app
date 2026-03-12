@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import uz.java.yoshlar_tashabusi_app.service.UserService;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
@@ -16,5 +18,10 @@ public class UserController {
     @PostMapping("/read-from-excel")
     public ResponseEntity<?> readFromExcel(@RequestBody MultipartFile file) {
         return ResponseEntity.ok(service.importFromExcel(file));
+    }
+
+    @GetMapping("/change-user-filds")
+    public ResponseEntity<?> chaneUserFields() {
+        return ResponseEntity.of(Optional.ofNullable(service.changeUserFilds()));
     }
 }

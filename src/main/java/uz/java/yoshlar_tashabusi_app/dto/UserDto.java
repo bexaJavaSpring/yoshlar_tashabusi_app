@@ -17,4 +17,10 @@ public class UserDto {
     private LocalDate birthDate;
     private String role;
     private int rowNumber;
+    private String documentSeriNumber;
+
+    public UserDto(String documentSeriesNumber, LocalDate dateOfBirth) {
+        this.documentSeriNumber = documentSeriesNumber;
+        this.birthDate = dateOfBirth;
+    }
 }

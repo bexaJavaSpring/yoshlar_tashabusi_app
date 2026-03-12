@@ -2,28 +2,24 @@ package uz.java.yoshlar_tashabusi_app.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "file_entity")
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class FileEntity {
+public class Attachment {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "owner_id")
-    private User user;
-
+    private Integer photoId;
+    private Long ownerId;
     private String attachmentFileId;
-
     private String attachmentFileName;
-
     private String attachmentFileType;
-
     private Integer status;
 }

@@ -14,6 +14,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @Slf4j
@@ -34,16 +35,20 @@ public class ExcelParserService {
             for (int i = HEADER_ROW_INDEX + 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null || isRowEmpty(row)) continue;
-
+//                if (row > 5)
+//                    continue;
                 try {
+                    System.out.println("getCellDate(row,2) = " + getCellDate(row, 2));
+                    System.out.println("getCellString(row,3) = " + getCellString(row, 3));
                     UserDto dto = UserDto.builder()
-                            .firstName(getCellString(row, 0))
-                            .lastName(getCellString(row, 1))
-                            .email(getCellString(row, 2))
-                            .phoneNumber(getCellString(row, 3))
-                            .birthDate(getCellDate(row, 4))
-                            .role(getCellString(row, 5))
+                            .birthDate(getCellDate(row, 2))
+                            .documentSeriNumber(getCellString(row, 3))
+                            .phoneNumber("+99899" + ThreadLocalRandom.current().nextInt(1_000_000, 10_000_000))
                             .rowNumber(i + 1)
+//                            .firstName(getCellString(row, 0))
+//                            .lastName(getCellString(row, 1))
+//                            .email(getCellString(row, 2))
+//                            .role(getCellString(row, 5))
                             .build();
 
                     users.add(dto);
@@ -68,7 +73,7 @@ public class ExcelParserService {
         if (cell == null) return null;
 
         return switch (cell.getCellType()) {
-            case STRING  -> cell.getStringCellValue().trim();
+            case STRING -> cell.getStringCellValue().trim();
             case NUMERIC -> {
                 // Raqam bor bo'lsa string sifatida qaytaramiz (telefon uchun)
                 if (DateUtil.isCellDateFormatted(cell)) yield null;
@@ -98,9 +103,9 @@ public class ExcelParserService {
             // dd.MM.yyyy formatini parse qilamiz
             String[] parts = val.split("[./\\-]");
             if (parts.length == 3) {
-                int day   = Integer.parseInt(parts[0]);
+                int day = Integer.parseInt(parts[0]);
                 int month = Integer.parseInt(parts[1]);
-                int year  = Integer.parseInt(parts[2]);
+                int year = Integer.parseInt(parts[2]);
                 return LocalDate.of(year, month, day);
             }
         }

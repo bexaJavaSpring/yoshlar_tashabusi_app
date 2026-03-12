@@ -1,8 +1,10 @@
 package uz.java.yoshlar_tashabusi_app.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -12,6 +14,8 @@ import java.util.Set;
 @Table(name = "users")
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,7 +35,8 @@ public class User {
 
     private String email;
 
-    @Column(unique = true)
+
+    @Column(nullable = true, unique = true)
     private String pinfl;
 
     private Integer genderId;
@@ -42,10 +47,11 @@ public class User {
 
     private String identityDocumentName;
 
-    private String documentSeries;
+    //    @Column(nullable = false, unique = true)
+    private String documentSeriesNumber;
 
-    @Column(unique = true)
-    private String documentNumber;
+//    @Column(unique = true)
+//    private String documentNumber;
 
     private String phoneNumber;
 
@@ -69,4 +75,18 @@ public class User {
     @JoinTable(name = "user_sport_type_category", joinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")}
             , inverseJoinColumns = {@JoinColumn(name = "sport_type_category_id", referencedColumnName = "id")})
     private Set<SportTypeCategory> sportTypeCategories = new HashSet<>();
+
+
+    /*
+    Userni ma'lumotlari Agentlik API sidan kelgan ma'lumotlari bilan to'ldirilganligi
+    */
+    private Boolean isFullData;
+
+    /*
+    Userning ma'lumotlari 5Tashabbus loyihasiga kiritilganligi
+    */
+    private Boolean isRegistered;
+
+    @OneToOne
+    private Attachment attachment;
 }
