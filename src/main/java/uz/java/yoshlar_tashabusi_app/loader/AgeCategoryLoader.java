@@ -1,6 +1,7 @@
 package uz.java.yoshlar_tashabusi_app.loader;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import uz.java.yoshlar_tashabusi_app.entity.Address;
@@ -17,10 +18,16 @@ public class AgeCategoryLoader implements CommandLineRunner {
     private final AgeCategoryRepository repository;
     private final AddressRepository addressRepository;
 
+    @Value("${spring.jpa.hibernate.ddl-auto}")
+    private String ddlAuto;
+
     @Override
     public void run(String... args) throws Exception {
         // Ma'lumotlar ro'yxati
 
+        if (!"create".equals(ddlAuto)) {
+            return;
+        }
 
         repository.saveAll(ageCategoryList());
         addressRepository.saveAll(addressList());
