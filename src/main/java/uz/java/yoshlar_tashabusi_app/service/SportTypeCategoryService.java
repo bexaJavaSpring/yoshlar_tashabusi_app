@@ -5,6 +5,8 @@ import lombok.SneakyThrows;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import uz.java.yoshlar_tashabusi_app.entity.AgeCategory;
 import uz.java.yoshlar_tashabusi_app.entity.SportTypeCategory;
 import uz.java.yoshlar_tashabusi_app.entity.User;
@@ -30,7 +32,6 @@ public class SportTypeCategoryService {
     public User syncSportTypeCategories(User user) {
         Set<SportTypeCategory> sportTypeCategories = new HashSet<>();
         String ageCategoryIdList = getAgeCategoryIdList(user);
-
         String urlString = "https://api.5tashabbus.uz/SportTypeCategory/GetAll?" +
                 "lang=uz_latn" +
                 "&agecategoryid=null" +
@@ -41,27 +42,37 @@ public class SportTypeCategoryService {
                 "&isonlineregistration=true";
 
         String response = fetchGet(urlString);
+
+        if (response == null || response.isBlank() || !response.trim().startsWith("[")) {
+            System.out.println("SportTypeCategory response xato: " + response);
+            return user;
+        }
+
         JSONArray results = new JSONArray(response);
 
         for (int i = 0; i < results.length(); i++) {
             JSONObject item = results.getJSONObject(i);
             int id = item.getInt("id");
             String name = item.optString("name", "");
-
-            SportTypeCategory category = sportTypeCategoryRepository.findById(id)
-                    .orElseGet(() -> {
-                        SportTypeCategory newCategory = new SportTypeCategory();
-                        newCategory.setId(id);
-                        newCategory.setName(name);
-                        return sportTypeCategoryRepository.save(newCategory);
-                    });
-
+            SportTypeCategory category = findOrCreateCategory(id, name);
             sportTypeCategories.add(category);
         }
 
         user.setSportTypeCategories(sportTypeCategories);
         userRepository.save(user);
         return user;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public SportTypeCategory findOrCreateCategory(int id, String name) {
+        SportTypeCategory sportTypeCategory = sportTypeCategoryRepository.findById(id).orElse(null);
+        if (sportTypeCategory == null) {
+            sportTypeCategory = new SportTypeCategory();
+            sportTypeCategory.setId(id);
+            sportTypeCategory.setName(name);
+            return sportTypeCategoryRepository.save(sportTypeCategory);
+        }
+        return sportTypeCategory;
     }
 
     private String getAgeCategoryIdList(User user) {

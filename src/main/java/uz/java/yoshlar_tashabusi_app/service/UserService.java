@@ -23,6 +23,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -163,10 +164,10 @@ public class UserService {
             User updatedUser = sportTypeCategoryService.syncSportTypeCategories(user);
             sportTypeService.syncSportTypes(updatedUser);
 //
-            if (user.getIsFullData())
+            if (!Objects.isNull(updatedUser.getIsFullData()) && updatedUser.getIsFullData() == Boolean.TRUE)
                 continue;
-            if (!changeData(user))
-                userDtos.add(new UserDto(user.getDocumentSeriesNumber(), user.getDateOfBirth()));
+            if (!changeData(updatedUser))
+                userDtos.add(new UserDto(updatedUser.getDocumentSeriesNumber(), updatedUser.getDateOfBirth()));
         }
 
         return userDtos;
