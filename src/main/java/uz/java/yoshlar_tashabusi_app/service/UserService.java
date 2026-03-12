@@ -10,10 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import uz.java.yoshlar_tashabusi_app.dto.ImportResultDto;
 import uz.java.yoshlar_tashabusi_app.dto.UserDto;
 import uz.java.yoshlar_tashabusi_app.entity.*;
-import uz.java.yoshlar_tashabusi_app.repository.AgeCategoryRepository;
-import uz.java.yoshlar_tashabusi_app.repository.AttachmentRepository;
-import uz.java.yoshlar_tashabusi_app.repository.SportTypeRepository;
-import uz.java.yoshlar_tashabusi_app.repository.UserRepository;
+import uz.java.yoshlar_tashabusi_app.repository.*;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -39,8 +36,9 @@ public class UserService {
     private final SportTypeCategoryService sportTypeCategoryService;
     private final SportTypeRepository sportTypeRepository;
     private final AgeCategoryRepository ageCategoryRepository;
+    private final SportTypeCategoryRepository sportTypeCategoryRepository;
 
-    public UserService(ExcelParserService excelParserService, UserRepository userRepository, AttachmentRepository attachmentRepository, AttachmetService attachmetService, SportTypeService sportTypeService, SportTypeCategoryService sportTypeCategoryService, SportTypeRepository sportTypeRepository, AgeCategoryRepository ageCategoryRepository) {
+    public UserService(ExcelParserService excelParserService, UserRepository userRepository, AttachmentRepository attachmentRepository, AttachmetService attachmetService, SportTypeService sportTypeService, SportTypeCategoryService sportTypeCategoryService, SportTypeRepository sportTypeRepository, AgeCategoryRepository ageCategoryRepository, SportTypeCategoryRepository sportTypeCategoryRepository) {
         this.excelParserService = excelParserService;
         this.userRepository = userRepository;
         this.attachmetService = attachmetService;
@@ -48,6 +46,7 @@ public class UserService {
         this.sportTypeCategoryService = sportTypeCategoryService;
         this.sportTypeRepository = sportTypeRepository;
         this.ageCategoryRepository = ageCategoryRepository;
+        this.sportTypeCategoryRepository = sportTypeCategoryRepository;
     }
 
     /*
@@ -199,13 +198,13 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Boolean insertData(Integer mfyId) {
+    public Integer insertData(Integer mfyId) {
         List<User> list = userRepository.findByMfyId(mfyId);
         int success = 0, failed = 0;
         for (User user : list) {
             try {
-                boolean result = sendUserToApi(user);
-                if (result) success++;
+                Integer result = sendUserToApi(user);
+                if (result) return user.getId();
                 else failed++;
             } catch (Exception e) {
                 System.out.println("User " + user.getId() + " xatolik: " + e.getMessage());
@@ -215,18 +214,14 @@ public class UserService {
         return success > 0;
     }
 
-    private boolean sendUserToApi(User user) throws Exception {
-        Address address = user.getAddress();
-        SportTypeCategory category = user.getSportTypeCategories()
-                .stream().findFirst().orElse(null);
-
-        List<Integer> sportTypeIds = sportTypeRepository
-                .findBySportTypeCategory(category)
-                .stream()
-                .map(SportyType::getId)
-                .collect(Collectors.toList());
-
+    private Integer sendUserToApi(User user) throws Exception {
         AgeCategory ageCategory = findAgeCategoryByBirthDate(user.getDateOfBirth());
+        Address address = user.getAddress();
+        List<SportyType> list = sportTypeRepository.findAllByAgeCategory(ageCategory.getId());
+        for (SportyType sportType : list) {
+
+        }
+        List<Integer> sportTypeIds = list.stream().map(SportyType::getId).collect(Collectors.toList());
         JSONObject body = new JSONObject();
         body.put("id", user.getId() != null ? user.getId() : 0);
         body.put("healthtypeid", user.getHealthTypeId());
@@ -298,7 +293,7 @@ public class UserService {
 
         try (InputStream stream = (status >= 200 && status < 300)
                 ? conn.getInputStream() : conn.getErrorStream()) {
-            if (stream == null) return false;
+            if (stream == null) return null;
             BufferedReader br = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             String line;
@@ -310,6 +305,7 @@ public class UserService {
             return !response.isNull("result") && response.optBoolean("success", false);
         }
     }
+
     private AgeCategory findAgeCategoryByBirthDate(LocalDate dateOfBirth) {
         if (dateOfBirth == null) return null;
         int age = Period.between(dateOfBirth, LocalDate.now()).getYears();
