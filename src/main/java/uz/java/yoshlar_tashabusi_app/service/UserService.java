@@ -176,11 +176,11 @@ public class UserService {
                 }
                 return user;
             } catch (Exception e) {
-                System.out.println(e);
+                System.out.println(e.toString());
                 return null;
             }
         } catch (Exception e) {
-            System.out.println(e);
+            System.out.println(e.toString());
             return null;
         }
     }

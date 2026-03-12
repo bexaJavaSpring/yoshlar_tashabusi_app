@@ -20,7 +20,7 @@ public class UserController {
         return ResponseEntity.ok(service.importFromExcel(file));
     }
 
-    @GetMapping("/change-user-filds")
+    @GetMapping("/change-user-fields")
     public ResponseEntity<?> chaneUserFields() {
         return ResponseEntity.of(Optional.ofNullable(service.changeUserFields()));
     }
