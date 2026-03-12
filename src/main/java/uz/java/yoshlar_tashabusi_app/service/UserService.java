@@ -31,11 +31,13 @@ public class UserService {
     private final ExcelParserService excelParserService;
     private final UserRepository userRepository;
     private final AttachmetService attachmetService;
+    private final AgeCategorySevice ageCategorySevice;
 
-    public UserService(ExcelParserService excelParserService, UserRepository userRepository, AttachmentRepository attachmentRepository, AttachmetService attachmetService) {
+    public UserService(ExcelParserService excelParserService, UserRepository userRepository, AttachmentRepository attachmentRepository, AttachmetService attachmetService, AgeCategorySevice ageCategorySevice) {
         this.excelParserService = excelParserService;
         this.userRepository = userRepository;
         this.attachmetService = attachmetService;
+        this.ageCategorySevice = ageCategorySevice;
     }
 
     /*
@@ -146,29 +148,32 @@ public class UserService {
     public List<UserDto> changeUserFilds() {
         List<UserDto> userDtos = new ArrayList<>();
         for (User user : userRepository.findAll()) {
-            /*
-             *               MUHAMMADOQDIR
-             * Add age categor method
-             * Add Region
-             *
-             * */
-
-
-            /*
-             *       BEXRUZ
-             *   Add Sport TpyeCategory method
-             *   Add Sport Tpye method
-             * */
-
-
 //
-            if (user.getIsFullData())
-                continue;
-            if (!changeData(user))
+            if (user.getIsFullData()) {
+                /*
+                 *               MUHAMMADOQDIR
+                 * Add age categor method
+                 * Add Region
+                 *
+                 * */
+
+                /*
+                 *       BEXRUZ
+                 *   Add Sport TpyeCategory method
+                 *   Add Sport Tpye method
+                 * */
+
+                addAgeCategory(user);
+
+            } else if (!changeData(user))
                 userDtos.add(new UserDto(user.getDocumentSeriesNumber(), user.getDateOfBirth()));
         }
 
         return userDtos;
+    }
+
+    private void addAgeCategory(User user) {
+        userRepository.save(ageCategorySevice.addAgeCategory(user));
     }
 
     public boolean changeData(User user) {
