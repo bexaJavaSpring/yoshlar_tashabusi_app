@@ -97,8 +97,6 @@ public class UserService {
         return ImportResultDto.of(parsedUsers.size(), savedCount, errors);
     }
 
-    // ─── Validatsiya ──────────────────────────────────────────────────────────
-
     private List<String> validate(UserDto dto) {
         List<String> errors = new ArrayList<>();
 
@@ -118,8 +116,6 @@ public class UserService {
         return email != null && email.matches("^[\\w.+\\-]+@[\\w\\-]+\\.[a-zA-Z]{2,}$");
     }
 
-    // ─── Mapper ───────────────────────────────────────────────────────────────
-
     private User toEntity(UserDto dto) {
         return User.builder()
 //                .firstName(dto.getFirstName())
@@ -130,8 +126,6 @@ public class UserService {
                 .dateOfBirth(dto.getBirthDate())
                 .build();
     }
-
-    // ─── Fayl tekshirish ──────────────────────────────────────────────────────
 
     private void validateFileFormat(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -326,7 +320,6 @@ public class UserService {
         body.put("userId", user.getId() != null ? user.getId() : 0);
         body.put("phonenumber", user.getPhoneNumber());
 
-        // Photo (Attachment)
         Attachment att = user.getAttachment();
         if (att != null) {
             JSONObject photo = new JSONObject();
@@ -341,7 +334,6 @@ public class UserService {
             body.put("photo", JSONObject.NULL);
         }
 
-        // POST request
         URL url = new URL("https://api.5tashabbus.uz/Account/InsertRegistrationOfAthlete");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
@@ -372,7 +364,6 @@ public class UserService {
             System.out.println("Response: " + sb);
 
             JSONObject response = new JSONObject(sb.toString());
-            // API success qaytarsa true
             return !response.isNull("result") && response.optBoolean("success", false);
         }
     }
