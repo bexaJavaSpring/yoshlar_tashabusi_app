@@ -1,7 +1,10 @@
 package uz.java.yoshlar_tashabusi_app.service;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import uz.java.yoshlar_tashabusi_app.entity.AgeCategory;
 import uz.java.yoshlar_tashabusi_app.entity.User;
 import uz.java.yoshlar_tashabusi_app.repository.AgeCategoryRepository;
@@ -63,8 +66,28 @@ public class AgeCategorySevice {
                 while ((line = br.readLine()) != null) {
                     response.append(line);
                 }
+                ObjectMapper objectMapper = new ObjectMapper();
+                List<AgeCategory> categories = null;
+                try {
+                    categories = objectMapper.readValue(
+                            response.toString(),
+                            new TypeReference<List<AgeCategory>>() {
+                            }
+                    );
 
+                    for (AgeCategory category : categories) {
+                        if (ageCategoryRepository.existsByName(category.getName())) {
+
+                        }
+                    }
+                    // Endi categories ro'yxatidan foydalanishingiz mumkin
+                    categories.forEach(c -> System.out.println(c.getName()));
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 JSONObject object = new JSONObject(response.toString());
+
                 if (object.isNull("result")) return null; // Safety check
 
             } catch (Exception e) {
