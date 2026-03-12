@@ -56,7 +56,7 @@ public class SportTypeService {
         }
     }
 
-    private String formatDate(LocalDate date) {
+    public String formatDate(LocalDate date) {
         return date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
     }
 }

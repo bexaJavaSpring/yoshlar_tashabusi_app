@@ -90,6 +90,7 @@ public class User {
     */
     private Boolean isRegistered;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinColumn(name = "attachment_id", referencedColumnName = "id")
     private Attachment attachment;
 }
