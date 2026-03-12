@@ -21,9 +21,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -53,12 +51,11 @@ public class AgeCategoryLoader implements CommandLineRunner {
         addressRepository.saveAll(addresses);
 
         for (AgeCategory ageCategory : ageCategories) {
-            Set<AgeCategory> ageCategoriesSet = new HashSet<>();
-            SportyType sportType = new SportyType();
             String url = "https://api.5tashabbus.uz/SportType/GetAll?lang=uz_latn&agecategoryid=" + ageCategory.getId();
             String response = fetchGet(url);
+
             if (response == null || response.isBlank() || !response.trim().startsWith("[")) {
-                System.out.println("Category " + " — response xato: " + response);
+                System.out.println("AgeCategory " + ageCategory.getName() + " — response xato: " + response);
                 continue;
             }
 
@@ -66,30 +63,29 @@ public class AgeCategoryLoader implements CommandLineRunner {
             for (int i = 0; i < results.length(); i++) {
                 JSONObject item = results.getJSONObject(i);
                 int id = item.getInt("id");
-                sportType = sportTypeRepository.findById(id).orElse(null);
+
+                SportyType sportType = sportTypeRepository.findById(id).orElse(null);
                 if (sportType == null) {
                     sportType = new SportyType();
                     sportType.setId(id);
                     sportType.setName(item.optString("name", ""));
                     sportType.setCommonType(item.isNull("commandtype") ? null : item.optInt("commandtype"));
                     sportType.setParticipantCount(item.optInt("participantcount", 0));
-                    sportTypeRepository.save(sportType);
-                } else {
-                    ageCategoriesSet = sportType.getAgeCategories();
-                    ageCategoriesSet.add(ageCategory);
                 }
+                sportType.getAgeCategories().add(ageCategory);
+                sportTypeRepository.save(sportType);
             }
-            sportType.setAgeCategories(ageCategoriesSet);
-            sportTypeRepository.save(sportType);
-        }
 
+            System.out.println("AgeCategory " + ageCategory.getName() + " uchun " + results.length() + " ta SportType saqlandi");
+        }
         for (SportTypeCategory category : sportTypeCategories) {
             String urlString = "https://api.5tashabbus.uz/SportType/GetAll?lang=uz_latn&sporttypecategoryid=" + category.getId();
-            String response = null;
+            String response;
             try {
                 response = fetchGet(urlString);
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                System.out.println("Category " + category.getName() + " — fetch xato: " + e.getMessage());
+                continue;
             }
 
             if (response == null || response.isBlank() || !response.trim().startsWith("[")) {
@@ -102,25 +98,21 @@ public class AgeCategoryLoader implements CommandLineRunner {
                 JSONObject item = results.getJSONObject(i);
                 int id = item.getInt("id");
 
-                SportyType sportType = sportTypeRepository.findById(id).orElse(null);
-                if (!sportTypeRepository.existsById(id)) {
-                    sportType = new SportyType();
+                SportyType sportType = sportTypeRepository.findById(id).orElse(new SportyType());
+                if (sportType.getId() == null) {
                     sportType.setId(id);
                     sportType.setName(item.optString("name", ""));
                     sportType.setCommonType(item.isNull("commandtype") ? null : item.optInt("commandtype"));
                     sportType.setParticipantCount(item.optInt("participantcount", 0));
-                    sportType.setSportTypeCategory(category);
-                    sportTypeRepository.save(sportType);
-                } else {
-                    sportType.setSportTypeCategory(category);
-                    sportTypeRepository.save(sportType);
                 }
+                sportType.setSportTypeCategory(category);
+                sportTypeRepository.save(sportType);
             }
+
             System.out.println("Category " + category.getName() + " uchun " + results.length() + " ta SportType saqlandi");
         }
 
-
-        System.out.println(">>> Yosh toifalari bazaga yuklandi!");
+        System.out.println(">>> Barcha ma'lumotlar bazaga yuklandi!");
     }
 
     private List<SportTypeCategory> sportTypeCategorysList() {

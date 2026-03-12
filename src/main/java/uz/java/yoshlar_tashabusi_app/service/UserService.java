@@ -185,7 +185,7 @@ public class UserService {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Integer> insertData(Integer mfyId) {
         List<User> list = userRepository.findByMfyId(mfyId);
         List<Integer> failedUserIds = new ArrayList<>();
