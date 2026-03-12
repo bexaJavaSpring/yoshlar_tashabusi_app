@@ -160,8 +160,8 @@ public class UserService {
              *   Add Sport TpyeCategory method
              *   Add Sport Tpye method
              * */
-            sportTypeCategoryService.syncSportTypeCategories(user);
-            sportTypeService.syncSportTypes(user);
+            User updatedUser = sportTypeCategoryService.syncSportTypeCategories(user);
+            sportTypeService.syncSportTypes(updatedUser);
 //
             if (user.getIsFullData())
                 continue;
