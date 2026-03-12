@@ -27,7 +27,7 @@ public class SportTypeCategoryService {
     private final UserRepository userRepository;
 
     @SneakyThrows
-    public void syncSportTypeCategories(User user) {
+    public User syncSportTypeCategories(User user) {
         Set<SportTypeCategory> sportTypeCategories = new HashSet<>();
         String ageCategoryIdList = getAgeCategoryIdList(user);
 
@@ -62,7 +62,7 @@ public class SportTypeCategoryService {
 
         user.setSportTypeCategories(sportTypeCategories);
         userRepository.save(user);
-        System.out.println("User " + user.getId() + " ga " + sportTypeCategories.size() + " ta category biriktirildi");
+        return user;
     }
 
     private String getAgeCategoryIdList(User user) {
