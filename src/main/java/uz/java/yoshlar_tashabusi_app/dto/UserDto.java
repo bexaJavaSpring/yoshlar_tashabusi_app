@@ -12,10 +12,8 @@ import java.time.LocalDate;
 public class UserDto {
     private String firstName;
     private String lastName;
-    private String email;
     private String phoneNumber;
     private LocalDate birthDate;
-    private String role;
     private int rowNumber;
     private String documentSeriNumber;
 
