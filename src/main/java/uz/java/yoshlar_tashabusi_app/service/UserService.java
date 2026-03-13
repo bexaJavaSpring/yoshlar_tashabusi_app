@@ -9,9 +9,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import uz.java.yoshlar_tashabusi_app.dto.ImportResultDto;
+import uz.java.yoshlar_tashabusi_app.dto.RegisterRequest;
 import uz.java.yoshlar_tashabusi_app.dto.UserDto;
 import uz.java.yoshlar_tashabusi_app.entity.*;
-import uz.java.yoshlar_tashabusi_app.repository.*;
+import uz.java.yoshlar_tashabusi_app.repository.AgeCategoryRepository;
+import uz.java.yoshlar_tashabusi_app.repository.SportTypeRepository;
+import uz.java.yoshlar_tashabusi_app.repository.UserRepository;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -186,99 +189,24 @@ public class UserService {
     }
 
     @Transactional
-    public List<Integer> insertData(Integer mfyId) {
-        List<User> list = userRepository.findByMfyId(mfyId);
-        List<Integer> failedUserIds = new ArrayList<>();
-        for (User user : list) {
-            try {
-                boolean result = sendUserToApi(user);
-                if (!result) failedUserIds.add(user.getId());
-            } catch (Exception e) {
-                System.out.println("User " + user.getId() + " xatolik: " + e.getMessage());
-                failedUserIds.add(user.getId());
+    @SneakyThrows
+    public Boolean insertData(List<RegisterRequest> request) {
+        for (RegisterRequest r : request) {
+            List<User> users = userRepository.findByDocumentSeriesNumberAndDateOfBirth(r.getDocumentSeries() + r.getDocumentNumber(), r.getBirthDate());
+            for (User u : users) {
+                sendRequest(u);
             }
         }
-        return failedUserIds;
-    }
-
-    private boolean sendUserToApi(User user) throws Exception {
-        AgeCategory ageCategory = findAgeCategoryByBirthDate(user.getDateOfBirth());
-        Address address = user.getAddress();
-        List<SportyType> sportTypeList = sportTypeRepository.findAllByAgeCategory(ageCategory.getId());
-        Integer successSportTypeId = null;
-        for (SportyType sportType : sportTypeList) {
-            Integer result = sendRequest(user, address, ageCategory, sportType);
-            if (result != null) {
-                successSportTypeId = result;
-                System.out.println("User " + user.getId() + " uchun sportTypeId: " + successSportTypeId + " muvaffaqiyatli!");
-                break;
-            } else {
-                System.out.println("User " + user.getId() + " — sportType " + sportType.getId() + " mos kelmadi, keyingisi...");
-            }
-        }
-
-        if (successSportTypeId == null) {
-            System.out.println("User " + user.getId() + " uchun hech qaysi sportType mos kelmadi!");
-            return false;
-        }
-
-        user.getSportTypeIdList().add(successSportTypeId);
-        userRepository.save(user);
         return true;
     }
 
-    private Integer sendRequest(User user, Address address, AgeCategory ageCategory, SportyType sportType) throws Exception {
-        SportTypeCategory category = sportType.getSportTypeCategory();
+    public boolean sendRequest(User user) throws Exception {
+//        randomda SportType dan 1tasini olamiz
         JSONObject body = new JSONObject();
-        body.put("id", 0);
-        body.put("healthtypeid", user.getHealthTypeId());
-        body.put("detail", user.getDetail() != null ? user.getDetail() : "");
-        body.put("oblastid", address != null ? address.getOblastId() : JSONObject.NULL);
-        body.put("oblastname", address != null ? address.getOblastName() : "");
-        body.put("regionid", address != null ? address.getRegionId() : JSONObject.NULL);
-        body.put("regionname", address != null ? address.getRegionName() : "");
-        body.put("mfyid", address != null ? address.getMfyId() : JSONObject.NULL);
-        body.put("regionsectorid", JSONObject.NULL);
-        body.put("regionsectorname", "");
-        body.put("youthleaderpersonid", user.getYouthLeaderPersonId() != null ? user.getYouthLeaderPersonId() : JSONObject.NULL);
-        body.put("familyname", user.getFamilyName());
-        body.put("firstname", user.getFirstName());
-        body.put("lastname", user.getLastName());
-        body.put("shortname", user.getShortName());
-        body.put("fullname", user.getFullName());
         body.put("dateofbirth", formatDate(user.getDateOfBirth()));
-        body.put("pinfl", user.getPinfl());
-        body.put("genderid", user.getGenderId());
-        body.put("gendername", user.getGenderName());
-        body.put("identitydocumentid", user.getIdentityDocumentId());
-        body.put("identitydocumentname", user.getIdentityDocumentName() != null ? user.getIdentityDocumentName() : JSONObject.NULL);
         body.put("documentseries", user.getDocumentSeriesNumber().substring(0, 2));
         body.put("documentnumber", user.getDocumentSeriesNumber().substring(2));
-        body.put("sporttypeids", new JSONArray(List.of(sportType.getId())));
-        body.put("canSave", true);
-        body.put("agecategoryid", ageCategory != null ? ageCategory.getId() : JSONObject.NULL);
-        body.put("sporttypecategoryid", category != null ? category.getId() : JSONObject.NULL);
-        body.put("sporttypecategoryname", category != null ? category.getName() : "");
-        body.put("isimport", user.isImport());
-        body.put("initiativtypeid", user.getInitiativTypeId());
-        body.put("initiativtypename", user.getInitiativTypeName() != null ? user.getInitiativTypeName() : "");
-        body.put("userId", 0);
-        body.put("phonenumber", user.getPhoneNumber());
-
-        Attachment att = user.getAttachment();
-        if (att != null) {
-            JSONObject photo = new JSONObject();
-            photo.put("id", att.getPhotoId() != null ? att.getPhotoId() : 0);
-            photo.put("ownerid", att.getOwnerId() != null ? att.getOwnerId() : 0);
-            photo.put("attachmentfileid", att.getAttachmentFileId());
-            photo.put("attachmentfilename", att.getAttachmentFileName());
-            photo.put("attachmentfiletype", att.getAttachmentFileType());
-            photo.put("Status", att.getStatus() != null ? att.getStatus() : 1);
-            body.put("photo", photo);
-        } else {
-            body.put("photo", JSONObject.NULL);
-        }
-
+        body.put("sporttypeids", new JSONArray(List.of()));
         URL url = new URL("https://api.5tashabbus.uz/Account/InsertRegistrationOfAthlete");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
@@ -296,28 +224,20 @@ public class UserService {
         }
 
         int status = conn.getResponseCode();
-        System.out.println("SportType " + sportType.getId() + " → HTTP status: " + status);
         try (InputStream stream = (status >= 200 && status < 300)
                 ? conn.getInputStream() : conn.getErrorStream()) {
-            if (stream == null) return null;
+            if (stream == null) return false;
             BufferedReader br = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             String line;
             while ((line = br.readLine()) != null) sb.append(line);
-            System.out.println("SportType " + sportType.getId() + " response: " + sb);
             JSONObject response = new JSONObject(sb.toString());
             boolean success = response.optBoolean("success", false);
-            return success ? sportType.getId() : null;
+            return success;
         }
     }
 
-    private AgeCategory findAgeCategoryByBirthDate(LocalDate dateOfBirth) {
-        if (dateOfBirth == null) return null;
-        int age = Period.between(dateOfBirth, LocalDate.now()).getYears();
-        return ageCategoryRepository.findByAge(age).orElse(null);
-    }
     public String formatDate(LocalDate date) {
         return date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
     }
-
 }

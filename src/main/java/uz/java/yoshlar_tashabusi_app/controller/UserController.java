@@ -4,8 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import uz.java.yoshlar_tashabusi_app.dto.RegisterRequest;
 import uz.java.yoshlar_tashabusi_app.service.UserService;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -25,8 +27,8 @@ public class UserController {
         return ResponseEntity.of(Optional.ofNullable(service.changeUserFields()));
     }
 
-    @GetMapping("/{mfyId}")
-    public ResponseEntity<?> insertData(@PathVariable Integer mfyId){
-        return ResponseEntity.ok(service.insertData(mfyId));
+    @PostMapping
+    public ResponseEntity<?> insertData(@RequestBody List<RegisterRequest> request){
+        return ResponseEntity.ok(service.insertData(request));
     }
 }
